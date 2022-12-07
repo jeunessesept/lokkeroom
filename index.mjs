@@ -27,7 +27,7 @@ app.post('/api/register', register)
 
 app.post('/api/login', login)
 
-app.post('/api/users/:user_id', createlobby)
+app.post('/api/users/:userid', createlobby)
 
 app.listen(3001, () => {
     console.log("app is runing");

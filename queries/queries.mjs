@@ -18,7 +18,6 @@ export const getUsers = (req, res) => {
       throw error;
     }
     res.status(200).json(results.rows);
-    res.status(200).send("seems to be ok");
   });
 };
 
@@ -49,7 +48,7 @@ export const login = async (req, res) => {
     return res.status(400).send({ error: "invalid request" });
 
   const query = await pool.query(
-    "select username, user_id, email, password from users where email =$1",
+    "select username, id, email, password from users where email =$1",
     [email]
   );
 
@@ -82,20 +81,22 @@ export const login = async (req, res) => {
   }
 };
 
-export const createlobby = (req, res) => {
-    const id = parseInt(req.params.id);
-    console.log(id)
-    const { lobby_name } = req.body
-    pool.query('insert into lobby (lobby_name)  values ($1)', [
-        lobby_name,
+export const createlobby = async (req, res) => {
+    const admin_id = parseInt(req.params);
+    console.log(Number.isNaN(admin_id))
+    const { lobbyname } = req.body
+    await pool.query('insert into lobby (lobbyname, admin_id)  values ($1, $2)', [
+        lobbyname,
+        admin_id
     ],
     (error, results) => {
         if (error) {
           throw error;
         }
         res.status(200).json(results.rows);
-        pool.query(`ALTER TABLE lobby add constraint fk_user_id foreign key (admin_id) REFERENCES users (${id});`)
+       
       }
+
     );
     
 }
