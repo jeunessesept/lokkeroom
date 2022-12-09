@@ -26,11 +26,11 @@ export const register = async (req, res) => {
     return res.status(400).send({ error: "invalid request" });
 
   try {
-    const secretPassword = await bcrypt.hash(password, 5);
+    const hashedPassword = await bcrypt.hash(password, 5);
 
     await pool.query(
       `insert into users (username, email, password) values ($1, $2, $3)`,
-      [username, email, secretPassword]
+      [username, email, hashedPassword]
     );
     return res.send({ info: "user succesfully added" });
   } catch (error) {
@@ -74,8 +74,8 @@ export const login = async (req, res) => {
   }
 };
 
-export const createlobby = (req, res) => {
-  const { id,} = req.decoded;
+export const createLobby = (req, res) => {
+  const { id } = req.decoded;
   const { lobbyname } = req.body;
   let admin_id = id;
 
@@ -83,13 +83,17 @@ export const createlobby = (req, res) => {
    pool.query('insert into lobby (lobbyname, admin_id)  values ($1, $2)', [
         lobbyname,
         admin_id
-    ],  (error, results) => {
+    ],  (error, res) => {
         if (error) {
           throw error;
         }
-        res.status(200).json(results.rows);
+        res.status(200).send({info: `lobby ${lobbyname} created`});
        
     });
 
   
 };
+
+export const postMessage = (req, res) => {
+
+}
