@@ -3,12 +3,11 @@ import JWT from "jsonwebtoken";
 import { promisify } from "util";
 import dotenv from "dotenv";
 import { pool } from "../db/dbPool.mjs";
+import { query } from "express";
 dotenv.config();
 
 const sign = promisify(JWT.sign);
 const verify = promisify(JWT.verify);
-
-
 
 export const getUsers = (req, res) => {
   pool.query("SELECT * FROM users", (error, results) => {
@@ -59,10 +58,14 @@ export const login = async (req, res) => {
 
   if (match) {
     try {
-      const token = await sign({ id: result.id, username: result.username, email}, process.env.SECRET_JWT, {
-        algorithm: "HS512",
-        expiresIn: "15000h",
-      });
+      const token = await sign(
+        { id: result.id, username: result.username, email },
+        process.env.SECRET_JWT,
+        {
+          algorithm: "HS512",
+          expiresIn: "15000h",
+        }
+      );
 
       return res.send({ token });
     } catch (err) {
@@ -74,26 +77,32 @@ export const login = async (req, res) => {
   }
 };
 
-export const createLobby = (req, res) => {
+export const createLobby = (req, response) => {
   const { id } = req.decoded;
   const { lobbyname } = req.body;
   let admin_id = id;
 
-
-   pool.query('insert into lobby (lobbyname, admin_id)  values ($1, $2)', [
-        lobbyname,
-        admin_id
-    ],  (error, res) => {
-        if (error) {
-          throw error;
+  pool.query(
+    "insert into lobby (lobbyname, admin_id)  values ($1, $2) returning *",
+    [lobbyname, admin_id],
+    (error, res) => {
+      if (error) {
+        throw error;
+      }
+      pool.query(
+        `insert into users_per_lobby (user_id, lobby_id) values ($1, $2)`,
+        [admin_id, res.rows[0].id],
+        (error, results) => {
+          if (error) {
+            throw error;
+          }
+          console.log(results.rows);
         }
-        res.status(200).send({info: `lobby ${lobbyname} created`});
-       
-    });
+      );
 
-  
+      response.status(200).send({ info: `lobby ${lobbyname} created` });
+    }
+  );
 };
 
-export const postMessage = (req, res) => {
-
-}
+export const postMessage = (req, res) => {};
