@@ -3,14 +3,12 @@ import JWT from "jsonwebtoken";
 import { promisify } from "util";
 import dotenv from "dotenv";
 import { pool } from "../db/dbPool.mjs";
-dotenv.config()
-
-import { dbConnect } from "../db/dbConnect.mjs";
+dotenv.config();
 
 const sign = promisify(JWT.sign);
 const verify = promisify(JWT.verify);
 
-dbConnect();
+
 
 export const getUsers = (req, res) => {
   pool.query("SELECT * FROM users", (error, results) => {
@@ -61,42 +59,37 @@ export const login = async (req, res) => {
 
   if (match) {
     try {
-        const token = await sign(
-          { email },
-          `${process.env.JWT_SECRET}`,
-          {
-            algorithm: "HS512",
-            expiresIn: "15000h",
-          }
-        );
-    
-        return res.send({ token });
-      } catch (err) {
-        console.log(err);
-        return res.status(500).send({ error: "Cannot generate token" });
-      }
-    
+      const token = await sign({ id: result.id, username: result.username, email}, process.env.SECRET_JWT, {
+        algorithm: "HS512",
+        expiresIn: "15000h",
+      });
+
+      return res.send({ token });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send({ error: "Cannot generate token" });
+    }
   } else {
     return res.status(403).send({ error: "wrong password" });
   }
 };
 
-export const createlobby = async (req, res) => {
-    const admin_id = parseInt(req.params);
-    console.log(Number.isNaN(admin_id))
-    const { lobbyname } = req.body
-    await pool.query('insert into lobby (lobbyname, admin_id)  values ($1, $2)', [
+export const createlobby = (req, res) => {
+  const { id,} = req.decoded;
+  const { lobbyname } = req.body;
+  let admin_id = id;
+
+
+   pool.query('insert into lobby (lobbyname, admin_id)  values ($1, $2)', [
         lobbyname,
         admin_id
-    ],
-    (error, results) => {
+    ],  (error, results) => {
         if (error) {
           throw error;
         }
         res.status(200).json(results.rows);
        
-      }
+    });
 
-    );
-    
-}
+  
+};
